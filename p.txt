@@ -1,0 +1,407 @@
+reports.post('/client_verification_ecs', async (req, res, next) => {
+
+    var {
+        client_id,
+    } = req.body;
+
+    var check_body_data = [client_id]
+    if (validateBodyData(check_body_data)) {
+        res.send(JSON.stringify({
+            "error_status": true,
+            "error": constants.err_desc.error_400_1,
+            "message": constants.customMessage.BODY_MISSING
+        }))
+    } else {
+        pool.getConnection(async (err, conn) => {
+            if (err) {
+                logger.logError({
+                    "error": err,
+                    "request": req
+                });
+                res.send(JSON.stringify({
+                    "error_status": true,
+                    "error": constants.err_desc.error_409,
+                    "message": constants.customMessage.DB_CON_FAILED
+                }))
+            } else {
+
+                // ======================================== FUNCTION ===========================
+                var validate_client = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.client where id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                resolve({
+                                    "error_status": false,
+                                    "cb_checkC": check_client_res.length
+                                })
+                            }
+                        })
+                    });
+
+                var validate_client_settings = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT dc_api_key FROM ${process.env.EC_DB_NAME}.client_settings where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    if (check_client_res[0].dc_api_key) {
+                                        resolve({
+                                            "error_status": false,
+                                            "cb_checkCS": true
+                                        })
+                                    } else {
+                                        resolve({
+                                            "error_status": false,
+                                            "cb_checkCS": false
+                                        })
+                                    }
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkCS": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                var validate_emp_roles = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.emp_roles where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkEMP": true
+                                    })
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkEMP": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                var validate_activity_type_cde = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.activity_type_cde where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkATC": true
+                                    })
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkATC": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                var validate_journey_plan_type_cde = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.journey_plan_type_cde where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkJPT": true
+                                    })
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkJPT": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                var validate_attendance_scheduler = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.attendance_scheduler where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkAS": true
+                                    })
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkAS": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                var validate_attendance_manager_types = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.attendance_manager_types where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkAMT": true
+                                    })
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkAMT": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                var validate_expense_types = async (client_id) =>
+                    new Promise((resolve, reject) => {
+                        var check_client = mysql.format(`SELECT * FROM ${process.env.EC_DB_NAME}.expense_types where client_id = ?`, [client_id]);
+                        conn.query(check_client, (err, check_client_res) => {
+                            if (err) {
+                                reject({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_501,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                });
+                            } else {
+                                if (check_client_res.length > 0) {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkET": true
+                                    })
+                                } else {
+                                    resolve({
+                                        "error_status": false,
+                                        "cb_checkET": false
+                                    })
+                                }
+                            }
+                        })
+                    });
+
+                let validate_client_r = await validate_client(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_client_settings_r = await validate_client_settings(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_emp_roles_r = await validate_emp_roles(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_activity_type_cde_r = await validate_activity_type_cde(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_journey_plan_type_cde_r = await validate_journey_plan_type_cde(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_attendance_scheduler_r = await validate_attendance_scheduler(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_attendance_manager_types_r = await validate_attendance_manager_types(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                let validate_expense_types_r = await validate_expense_types(client_id).then(result => {
+                    return result;
+                }).catch((error) => {
+                    return error;
+                });
+
+                const verification = [];
+                if (validate_client_r.error_status) {
+                    res.send(JSON.stringify({
+                        "error_status": true,
+                        "error": constants.err_desc.error_500,
+                        "message": constants.customMessage.QUERY_FAILED
+                    }))
+                } else {
+                    if (validate_client_r.cb_checkC > 0) {
+                        if (validate_client_settings_r.error_status) {
+                            res.send(JSON.stringify({
+                                "error_status": true,
+                                "error": constants.err_desc.error_500,
+                                "message": constants.customMessage.QUERY_FAILED
+                            }))
+                        } else {
+                            var obj = {};
+                            obj.desc = platform_config_ec.ec_verification.DC_API_KEY;
+                            obj.desc_value = validate_client_settings_r.cb_checkCS;
+                            verification.push(obj)
+                            if (validate_emp_roles_r.error_status) {
+                                res.send(JSON.stringify({
+                                    "error_status": true,
+                                    "error": constants.err_desc.error_500,
+                                    "message": constants.customMessage.QUERY_FAILED
+                                }))
+                            } else {
+                                var obj = {};
+                                obj.desc = platform_config_ec.ec_verification.Employee_Role;
+                                obj.desc_value = validate_emp_roles_r.cb_checkEMP;
+                                verification.push(obj)
+                                if (validate_activity_type_cde_r.error_status) {
+                                    res.send(JSON.stringify({
+                                        "error_status": true,
+                                        "error": constants.err_desc.error_500,
+                                        "message": constants.customMessage.QUERY_FAILED
+                                    }))
+                                } else {
+                                    var obj = {};
+                                    obj.desc = platform_config_ec.ec_verification.Activity_type_code;
+                                    obj.desc_value = validate_activity_type_cde_r.cb_checkATC;
+                                    verification.push(obj)
+                                    if (validate_journey_plan_type_cde_r.error_status) {
+                                        res.send(JSON.stringify({
+                                            "error_status": true,
+                                            "error": constants.err_desc.error_500,
+                                            "message": constants.customMessage.QUERY_FAILED
+                                        }))
+                                    } else {
+                                        var obj = {};
+                                        obj.desc = platform_config_ec.ec_verification.JP_type;
+                                        obj.desc_value = validate_journey_plan_type_cde_r.cb_checkJPT;
+                                        verification.push(obj)
+                                        if (validate_attendance_scheduler_r.error_status) {
+                                            res.send(JSON.stringify({
+                                                "error_status": true,
+                                                "error": constants.err_desc.error_500,
+                                                "message": constants.customMessage.QUERY_FAILED
+                                            }))
+                                        } else {
+                                            var obj = {};
+                                            obj.desc = platform_config_ec.ec_verification.Attendance_Scheduler;
+                                            obj.desc_value = validate_attendance_scheduler_r.cb_checkAS;
+                                            verification.push(obj)
+                                            if (validate_attendance_manager_types_r.error_status) {
+                                                res.send(JSON.stringify({
+                                                    "error_status": true,
+                                                    "error": constants.err_desc.error_500,
+                                                    "message": constants.customMessage.QUERY_FAILED
+                                                }))
+                                            } else {
+                                                var obj = {};
+                                                obj.desc = platform_config_ec.ec_verification.Attendance_Type;
+                                                obj.desc_value = validate_attendance_manager_types_r.cb_checkAMT;
+                                                verification.push(obj)
+                                                if (validate_expense_types_r.error_status) {
+                                                    res.send(JSON.stringify({
+                                                        "error_status": true,
+                                                        "error": constants.err_desc.error_500,
+                                                        "message": constants.customMessage.QUERY_FAILED
+                                                    }))
+                                                } else {
+                                                    var obj = {};
+                                                    obj.desc = platform_config_ec.ec_verification.Expense_Type;
+                                                    obj.desc_value = validate_expense_types_r.cb_checkET;
+                                                    verification.push(obj)
+                                                    var check_const = false
+                                                    for (var i = 0; i < constant.client_settings_custom.length; i++) {
+                                                        if (constant.client_settings_custom[i].client_id == client_id) {
+                                                            check_const = true
+                                                            break
+                                                        }
+                                                    }
+                                                    var obj = {};
+                                                    obj.desc = platform_config_ec.ec_verification.Client_info;
+                                                    obj.desc_value = check_const;
+                                                    verification.push(obj)
+                                                    res.send(JSON.stringify({
+                                                        "error_status": false,
+                                                        "error": {},
+                                                        "message": constants.customMessage.DATA_RETURNED,
+                                                        "response": verification
+                                                    }))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        res.send(JSON.stringify({
+                            "error_status": true,
+                            "error": constants.err_desc.error_500,
+                            "message": "Client Not Found"
+                        }))
+                    }
+                }
+            }
+            conn.release();
+        });
+    }
+})
